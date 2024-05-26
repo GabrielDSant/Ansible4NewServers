@@ -1,0 +1,5 @@
+-- Rodar o playbook
+ansible-playbook -i inventory playbook.yml -u root --ask-pass
+
+-- rodar no container gitlab-runner para registrar ele no gitlab
+gitlab-runner register

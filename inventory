@@ -1,0 +1,7 @@
+[myhosts]
+{{ip}} ansible_connection=ssh
+
+[server]
+gitlab container_name=gitlab domain=git.dominio.org.br
+nginx container_name=nginx domain=proxy.dominio.org.br
+runner container_name=gitlab-runner
