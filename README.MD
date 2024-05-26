@@ -6,8 +6,7 @@ Este repositório contém diversas automações criadas com Ansible para facilit
 
 ## Estrutura do Repositório
 
-- `playbooks/`: Contém os playbooks Ansible para diversas tarefas de automação.
-- `inventory/`: Arquivos de inventário para definir os hosts e grupos de hosts que serão gerenciados.
+- Cada pasta nesse repositório é uma automação para uma ferramenta / configuração para um servidor novo.
 
 ## Como Contribuir
 
