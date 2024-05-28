@@ -1,0 +1,90 @@
+- name: Install Zabbix Server and Agents
+  hosts: zabbix
+  gather_facts: no
+  become: true
+  tasks:
+    - name: Verificação - Existencia do diretório base no servidor.
+      stat:
+        path: /stage
+      register: stage_directory_check
+
+    - name: Criação do diretório base no servidor.
+      file:
+        path: /stage
+        state: directory
+      when: not stage_directory_check.stat.exists
+
+    - name: Verificação - Existencia do package.
+      stat:
+        path: /stage/zabbix-release_latest+ubuntu24.04_all.deb
+      register: repo_check
+
+    - name: Envio do arquivo rep para o servidor
+      copy:
+        src: zabbix-release_latest+ubuntu24.04_all.deb
+        dest: /stage
+      when: not repo_check.stat.exists
+
+    - name: Adicionado repositorio zabbix
+      command: dpkg -i /stage/zabbix-release_latest+ubuntu24.04_all.deb
+      register: instalacao_repo
+    
+    - name: apt-get update
+      command: apt-get update
+
+    - name: Instalando Zabbix Server
+      apt:
+        name: 
+          - zabbix-server-mysql
+          - zabbix-frontend-php
+          - zabbix-apache-conf
+          - zabbix-sql-scripts
+          - zabbix-agent
+        state: present
+        
+    - name: Configurando mysql
+      command: zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | mysql --default-character-set=utf8mb4 -u zabbix -p{{ hostvars['server_zabbix']['zabbix_db_password']  }} zabbix
+      become_user: root
+
+    - name: Configurando senha do mysql no zabbix
+      lineinfile:
+        path: /etc/zabbix/zabbix_server.conf
+        regexp: '^DBPassword='
+        line: "DBPassword={{ hostvars['server_zabbix']['zabbix_db_password'] }}"
+      become_user: root
+
+    - name: Configurando db_host no zabbix server
+      lineinfile:
+        path: /etc/zabbix/zabbix_server.conf
+        regexp: '^DBHost='
+        line: 'DBHost=localhost'
+      become_user: root
+
+    - name: Iniciando via systemd o zabbix e o Agent
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - zabbix-server
+        - zabbix-agent
+
+# - name: Install Zabbix Agent on Zabbix Agents
+#   hosts: zabbix_agents
+#   become: true
+#   tasks:
+#     - name: Install Zabbix Agent
+#       apt:
+#         name: zabbix-agent
+#         state: present
+#     - name: Configure Zabbix Agent
+#       lineinfile:
+#         path: /etc/zabbix/zabbix_agentd.conf
+#         regexp: '^Server='
+#         line: "Server={{ hostvars['zabbix_server']['ansible_host'] }}"
+#       become_user: root
+#     - name: Start and enable Zabbix Agent
+#       systemd:
+#         name: zabbix-agent
+#         state: started
+#         enabled: yes
