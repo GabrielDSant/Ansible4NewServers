@@ -1,0 +1,3 @@
+nginx_container_name: "nginx"
+nginx_domain: "proxy.dominio.org.br"
+nginx_image_name: "nginx_image"

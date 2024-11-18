@@ -1,0 +1,30 @@
+# roles/zabbix/defaults/main.yml
+
+# Nome do container Zabbix
+container_name: "zabbix-server"
+
+# Imagem Docker para Zabbix
+docker_image: "{{ container_name }}"
+
+# Porta mapeada para Zabbix
+zabbix_port: "10051:10051"
+
+# Diretórios de volume
+zabbix_volumes:
+  - "/app/zabbix/logs:/var/log/zabbix"
+  - "/app/zabbix/snmptraps:/var/lib/zabbix/snmptraps"
+  - "/app/zabbix/data:/var/lib/mysql"
+
+# Rede Docker
+docker_network: "network"
+
+# Arquivo .deb do Zabbix
+zabbix_deb_src: "zabbix.deb"
+zabbix_deb_dest: "/app/zabbix.deb"
+
+# Dockerfile
+dockerfile_src: "DockerFile"
+dockerfile_dest: "/app/DockerFile"
+
+# Variáveis sensíveis
+zabbix_db_password: "myzabbixpassword"  # Deve ser sobrescrita via group_vars ou Ansible Vault

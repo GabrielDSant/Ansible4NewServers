@@ -1,0 +1,33 @@
+# roles/nginx/tasks/main.yml
+
+- name: Verificar se o container Nginx já existe
+  docker_container_info:
+    name: "{{ nginx_container_name }}"
+  register: nginx_container_info
+  ignore_errors: true
+
+- name: Configurar e criar o container Nginx
+  block:
+    - name: Criar container Nginx
+      docker_container:
+        name: "{{ nginx_container_name }}"
+        image: "{{ nginx_image_name }}"
+        hostname: "{{ nginx_domain }}"
+        restart_policy: always
+        volumes:
+          - '/var/www/docker/gitlab/nginx.conf:/etc/nginx/nginx.conf'
+        ports:
+          - '80:80'
+        networks:
+          - name: "{{ docker_network_name }}"
+        state: started
+
+    - name: Copiar configuração do Nginx
+      copy:
+        src: nginx.conf
+        dest: /var/www/docker/gitlab/nginx.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+  when: nginx_container_info is failed or not nginx_container_info.exists

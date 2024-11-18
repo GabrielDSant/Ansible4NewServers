@@ -1,0 +1,4 @@
+gitlab_volume_path: "/var/www/docker/gitlab"
+gitlab_container_name: "gitlab"
+gitlab_domain: "gitlab.dominio.org.br"
+gitlab_image_name: "gitlab_image"

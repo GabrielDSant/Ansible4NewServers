@@ -1,0 +1,4 @@
+bind_volume_path: /var/lib/docker/bind
+bind_container_name: bind-server
+bind_image_name: bind:latest  # Certifique-se de que a imagem seja válida
+docker_network_name: network

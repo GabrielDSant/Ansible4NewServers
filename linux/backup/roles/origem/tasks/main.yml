@@ -1,0 +1,12 @@
+- name: Migração de dados MySQL
+  hosts: origem
+  tasks:
+    - name: Exportar dados do MySQL no host origem
+      command: mysqldump -u <USUARIO> -p<SENHA> <BANCO> > /tmp/dados.sql
+      register: export_result
+
+    - name: Transferir dump para o controlador
+      copy:
+        src: /tmp/dados.sql
+        dest: /tmp/
+      delegate_to: destino

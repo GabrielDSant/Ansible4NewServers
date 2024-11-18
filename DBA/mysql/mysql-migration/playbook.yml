@@ -1,0 +1,18 @@
+# playbook.yml
+
+---
+- hosts: myhosts
+  become: yes
+  gather_facts: true
+
+  vars_files:
+    - group_vars/myhosts.yml
+
+  collections:
+    - community.docker
+
+  roles:
+    - origem
+    - destino
+    - send_log_email
+    - valida_objetos

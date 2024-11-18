@@ -1,0 +1,17 @@
+# playbook.yml
+
+---
+- hosts: myhosts
+  become: yes
+  gather_facts: true
+
+  vars_files:
+    - group_vars/myhosts.yml
+
+  collections:
+    - community.docker
+
+  roles:
+    - docker
+    - nginx
+    - gitlab

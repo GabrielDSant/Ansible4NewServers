@@ -1,0 +1,61 @@
+# roles/docker/tasks/main.yml
+
+- name: Verificar se Docker está instalado
+  command: docker --version
+  register: docker_version
+  ignore_errors: true
+  changed_when: false
+
+- name: Instalar Docker
+  block:
+  - name: Instalar chave GPG do Docker
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+    when: ansible_distribution == 'Ubuntu' and docker_version.rc != 0
+
+  - name: Adicionar repositório Docker
+    apt_repository:
+      repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+      state: present
+    when: ansible_distribution == 'Ubuntu' and docker_version.rc != 0
+
+  - name: Instalar Docker
+    apt:
+      name: docker-ce
+      state: present
+    when: ansible_distribution == 'Ubuntu' and docker_version.rc != 0
+
+  - name: Verificar se docker-compose está instalado
+    command: docker-compose --version
+    register: docker_compose_version
+    ignore_errors: yes
+    changed_when: false
+
+  - name: Instalar docker-compose
+    apt:
+      name: docker-compose
+      state: present
+      update_cache: yes
+    when: docker_compose_version.rc != 0 and ansible_distribution == 'Ubuntu'
+
+  - name: Verificar se a rede Docker existe
+    docker_network:
+      name: "{{ docker_network }}"
+      state: present
+      driver: bridge
+      
+  - name: Verificação - Network docker.
+    command: docker network inspect network
+    register: network_inspect
+    ignore_errors: true
+
+  - name: Criação network docker.
+    docker_network:
+      name: network
+      state: present
+      driver: bridge
+    when: network_inspect.rc != 0  # Cria a rede apenas se o comando de inspeção falhar
+
+
+  when: docker_version.rc != 0

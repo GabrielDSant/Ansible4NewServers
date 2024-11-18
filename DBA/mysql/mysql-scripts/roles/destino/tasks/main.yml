@@ -1,0 +1,41 @@
+- name: Configurar cron jobs de monitoramento para MySQL
+  hosts: destino
+  tasks:
+    - name: Copiar scripts de monitoramento para o destino
+      copy:
+        src: "{{ item }}"
+        dest: "/usr/local/bin/{{ item | basename }}"
+        mode: '0755'
+      with_items:
+        - monitor_tablespace.sh
+        - check_locked_sessions.sh
+        - check_data_block_corruption.sh
+        - monitor_alert_log.sh
+
+    - name: Configurar cron job para monitorar espaço em tablespaces
+      cron:
+        name: "Monitoramento de espaço em tablespaces"
+        minute: "0"
+        hour: "*"
+        job: "/usr/local/bin/monitor_tablespace.sh"
+
+    - name: Configurar cron job para verificar sessões bloqueadas
+      cron:
+        name: "Verificação de sessões bloqueadas"
+        minute: "0"
+        hour: "*"
+        job: "/usr/local/bin/check_locked_sessions.sh"
+
+    - name: Configurar cron job para verificar corrupção de blocos de dados
+      cron:
+        name: "Verificação de corrupção de blocos de dados"
+        minute: "0"
+        hour: "*"
+        job: "/usr/local/bin/check_data_block_corruption.sh"
+
+    - name: Configurar cron job para monitorar erros no log de alertas
+      cron:
+        name: "Monitoramento de erros no log de alertas"
+        minute: "0"
+        hour: "*"
+        job: "/usr/local/bin/monitor_alert_log.sh"

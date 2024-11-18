@@ -1,0 +1,63 @@
+- name: Criar diretório para volumes do BIND
+  file:
+    path: "{{ bind_volume_path }}"
+    state: directory
+    mode: '0755'
+
+- name: Copiar arquivo named.conf para o volume
+  copy:
+    src: named.conf
+    dest: "{{ bind_volume_path }}/named.conf"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Copiar arquivo de configuração do BIND para o volume
+  copy:
+    src: named.conf.local
+    dest: "{{ bind_volume_path }}/named.conf.local"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Copiar arquivo de configuração do BIND para o volume
+  copy:
+    src: named.conf.options
+    dest: "{{ bind_volume_path }}/named.conf.options"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Copiar diretório de zona do BIND para o volume
+  copy:
+    src: zones/
+    dest: "{{ bind_volume_path }}/zones/"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Verificar se o container BIND já existe
+  docker_container_info:
+    name: "{{ bind_container_name }}"
+  register: bind_container_info
+  ignore_errors: true
+
+- name: Criar e iniciar o container do BIND
+  docker_container:
+    name: "{{ bind_container_name }}"
+    image: "{{ bind_image_name }}"
+    state: started
+    recreate: true
+    restart_policy: always
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+    volumes:
+      - "{{ bind_volume_path }}/named.conf:/etc/bind/named.conf"
+      - "{{ bind_volume_path }}/named.conf.local:/etc/bind/named.conf.local"
+      - "{{ bind_volume_path }}/named.conf.options:/etc/bind/named.conf.options"
+      - "{{ bind_volume_path }}/zones:/var/cache/bind/zones"
+    command: "named -g -c /etc/bind/named.conf"
+    networks:
+      - name: "{{ docker_network_name }}"
+  when: bind_container_info is failed or not bind_container_info.exists

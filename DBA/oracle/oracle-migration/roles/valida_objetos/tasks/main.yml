@@ -1,0 +1,34 @@
+- name: Transferência e Importação no Destino
+  hosts: destino
+  tasks:
+    - name: Verificar e Recompilar Objetos Inválidos
+      shell: |
+        sqlplus -s <USUARIO>/<SENHA>@<BANCO> <<EOF
+        SET PAGESIZE 0 FEEDBACK OFF VERIFY OFF HEADING OFF ECHO OFF
+        SPOOL /tmp/invalid_objects_recompilation.log
+        -- Identifica e tenta recompilar todos os objetos inválidos
+        FOR obj IN (SELECT owner, object_name, object_type
+                    FROM dba_objects
+                    WHERE status = 'INVALID')
+        LOOP
+          EXECUTE IMMEDIATE 'ALTER ' || obj.object_type || ' ' || obj.owner || '.' || obj.object_name || ' COMPILE';
+        END LOOP;
+        SPOOL OFF
+        EXIT;
+        EOF
+      register: recompile_result
+
+    - name: Checar log de recompilação para objetos ainda inválidos
+      command: grep 'ORA-' /tmp/invalid_objects_recompilation.log
+      register: invalid_objects_check
+      failed_when: invalid_objects_check.rc == 0
+      ignore_errors: yes
+
+    - name: Enviar alerta de objetos inválidos não recompilados (se houver)
+      mail:
+        to: "seu_email@example.com"
+        subject: "Alerta: Objetos inválidos não recompilados após migração"
+        body: |
+          Alguns objetos ainda estão inválidos após a tentativa de recompilação:
+          {{ invalid_objects_check.stdout }}
+      when: invalid_objects_check.rc == 0

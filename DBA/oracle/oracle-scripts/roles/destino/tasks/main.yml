@@ -1,0 +1,58 @@
+- name: Transferir scripts de monitoramento e configurar cron
+  hosts: banco
+  tasks:
+    - name: Transferir scripts para o servidor
+      copy:
+        src: "{{ item }}"
+        dest: "/usr/local/bin/{{ item | basename }}"
+        mode: '0755'
+      loop:
+        - monitorar_tablespaces.sh
+        - verificar_sessoes_bloqueadas.sh
+        - verificar_blocos_corrompidos.sh
+        - monitorar_alert_log.sh
+        - mata_inativos.sh
+
+    - name: Configurar cron para executar scripts
+      cron:
+        name: "Monitoramento Oracle - {{ item }}"
+        minute: "0"
+        hour: "*"
+        job: "/usr/local/bin/{{ item }}"
+      loop:
+        - monitorar_tablespaces.sh
+        - verificar_sessoes_bloqueadas.sh
+        - verificar_blocos_corrompidos.sh
+        - monitorar_alert_log.sh
+        - mata_inativos.sh
+
+- name: Enviar alerta por email se houver logs de erro
+  hosts: localhost
+  tasks:
+    - name: Enviar alerta de tablespaces
+      mail:
+        to: "seu_email@example.com"
+        subject: "Alerta: Espaço em tablespaces"
+        body: "{{ lookup('file', '/tmp/alert_tablespace.log') }}"
+      when: ansible.builtin.file_stat.path == '/tmp/alert_tablespace.log' and ansible.builtin.file_stat.exists
+
+    - name: Enviar alerta de sessões bloqueadas
+      mail:
+        to: "seu_email@example.com"
+        subject: "Alerta: Sessões bloqueadas"
+        body: "{{ lookup('file', '/tmp/alert_sessoes_bloqueadas.log') }}"
+      when: ansible.builtin.file_stat.path == '/tmp/alert_sessoes_bloqueadas.log' and ansible.builtin.file_stat.exists
+
+    - name: Enviar alerta de blocos corrompidos
+      mail:
+        to: "seu_email@example.com"
+        subject: "Alerta: Blocos de dados corrompidos"
+        body: "{{ lookup('file', '/tmp/alert_blocos_corrompidos.log') }}"
+      when: ansible.builtin.file_stat.path == '/tmp/alert_blocos_corrompidos.log' and ansible.builtin.file_stat.exists
+
+    - name: Enviar alerta de erros no alert log
+      mail:
+        to: "seu_email@example.com"
+        subject: "Alerta: Erros no alert log"
+        body: "{{ lookup('file', '/tmp/alert_erro_alert_log.log') }}"
+      when: ansible.builtin.file_stat.path == '/tmp/alert_erro_alert_log.log' and ansible.builtin.file_stat.exists

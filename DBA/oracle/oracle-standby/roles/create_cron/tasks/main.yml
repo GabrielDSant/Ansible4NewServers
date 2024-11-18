@@ -1,0 +1,8 @@
+- name: Aplicar backup incremental no banco de dados standby
+  hosts: standby
+  tasks:
+    - name: Agendar o playbook de backup para execução a cada hora
+      cron:
+        name: "Backup Incremental Oracle"
+        minute: "0"
+        job: "ansible-playbook /caminho/do/playbook/backup_migracao_oracle.yml"

@@ -1,0 +1,86 @@
+# roles/gitlab/tasks/main.yml
+
+- name: Garantir que o diretório para volumes do GitLab exista
+  file:
+    path: "{{ gitlab_volume_path }}"
+    state: directory
+    mode: '0755'
+
+- name: Verificar se o container GitLab já existe
+  docker_container_info:
+    name: "{{ gitlab_container_name }}"
+  register: gitlab_container_info
+  ignore_errors: true
+
+- name: Configurar e criar o container GitLab
+  block:
+    - name: Copiar Dockerfile para o servidor de destino
+      copy:
+        src: ../../Dockerfile  # Ajuste o caminho conforme a localização do Dockerfile
+        dest: /var/www/docker/
+        owner: root
+        group: root
+        mode: '0777'
+
+    - name: Construir a imagem Docker do GitLab
+      docker_image:
+        name: "{{ gitlab_image_name }}"
+        source: build
+        build:
+          path: /var/www/docker
+          dockerfile: Dockerfile
+
+    - name: Criar container GitLab
+      docker_container:
+        name: "{{ gitlab_container_name }}"
+        image: "{{ gitlab_image_name }}"
+        hostname: "{{ gitlab_domain }}"
+        env:
+          GITLAB_OMNIBUS_CONFIG: |
+            external_url 'http://{{ nginx_domain }}'
+            gitlab_rails['gitlab_shell_ssh_port'] = 2222
+          GITLAB_ROOT_PASSWORD: "{{ gitlab_root_password }}"
+        restart_policy: always
+        volumes:
+          - "{{ gitlab_volume_path }}/config:/etc/gitlab"
+          - "{{ gitlab_volume_path }}/logs:/var/log/gitlab"
+          - "{{ gitlab_volume_path }}/data:/var/opt/gitlab"
+        networks:
+          - name: "{{ docker_network_name }}"
+        state: started
+
+    - name: Esperar o container GitLab estar em execução
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: 80
+        state: started
+        delay: 10
+        timeout: 300
+
+    - name: Executar comandos de configuração no GitLab
+      block:
+        - name: Atualizar apt dentro do container GitLab
+          command: docker exec {{ container_name }} apt-get update
+          ignore_errors: true
+
+        - name: Instalar dependências dentro do container GitLab
+          command: docker exec {{ container_name }} apt-get install -y curl openssh-server ca-certificates tzdata perl runit
+          ignore_errors: true
+
+        - name: Baixar script de repositório GitLab
+          command: docker exec {{ container_name }} wget -P /tmp https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh
+          ignore_errors: true
+
+        - name: Executar script para adicionar repositório GitLab
+          command: docker exec {{ container_name }} bash /tmp/script.deb.sh
+          ignore_errors: true
+
+        - name: Instalar GitLab CE dentro do container
+          command: docker exec {{ container_name }} apt-get install -y gitlab-ce
+          ignore_errors: true
+
+        - name: Executar reconfiguração do GitLab
+          command: docker exec {{ container_name }} gitlab-ctl reconfigure
+          ignore_errors: true
+
+  when: gitlab_container_info is failed or not gitlab_container_info.exists

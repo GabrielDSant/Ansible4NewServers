@@ -1,0 +1,82 @@
+# roles/zabbix/tasks/main.yml
+
+- name: Verificar existência do diretório para volumes
+  stat:
+    path: /app/zabbix
+  register: zabbix_directory_check
+
+- name: Criar diretório para volumes do Zabbix
+  file:
+    path: /app/zabbix
+    state: directory
+    mode: '0755'
+  when: not zabbix_directory_check.stat.exists
+
+- name: Verificar se o container Zabbix já existe
+  docker_container_info:
+    name: "{{ container_name }}"
+  register: zabbix_container_info
+  ignore_errors: true
+
+- name: Configurar e criar o container Zabbix
+  block:
+    - name: Copiar Dockerfile para o servidor de destino
+      copy:
+        src: "{{ dockerfile_src }}"
+        dest: "{{ dockerfile_dest }}"
+        owner: root
+        group: root
+        mode: '0777'
+
+    - name: Construir a imagem Docker do Zabbix
+      docker_image:
+        path: /app
+        name: "{{ docker_image }}"
+        tag: latest
+
+    - name: Criar container Zabbix
+      docker_container:
+        name: "{{ container_name }}"
+        image: "{{ docker_image }}"
+        state: started
+        restart_policy: always
+        ports:
+          - "{{ zabbix_port }}"
+        env:
+          MYSQL_ROOT_PASSWORD: "mysecretpassword"  # Deve ser parametrizado
+          MYSQL_USER: "zabbix"
+          MYSQL_PASSWORD: "{{ zabbix_db_password }}"
+          MYSQL_DATABASE: "zabbix"
+        volumes: "{{ zabbix_volumes }}"
+        networks:
+          - name: "{{ docker_network }}"
+
+    - name: Verificar se o pacote .deb do Zabbix existe
+      stat:
+        path: "{{ zabbix_deb_dest }}"
+      register: repo_check
+
+    - name: Copiar pacote .deb do Zabbix para o servidor
+      copy:
+        src: "{{ zabbix_deb_src }}"
+        dest: "{{ zabbix_deb_dest }}"
+      when: not repo_check.stat.exists
+
+    - name: Instalar pacotes adicionais dentro do container Zabbix
+      command: docker exec {{ container_name }} dpkg -i /stage/zabbix-release_latest+ubuntu24.04_all.deb && apt-get update
+
+    - name: Instalar pacotes Zabbix dentro do container
+      command: docker exec {{ container_name }} apt install -y zabbix-server-mysql zabbix-frontend-php zabbix-apache-conf zabbix-sql-scripts zabbix-agent
+
+    - name: Importar esquema do banco de dados Zabbix
+      command: docker exec {{ container_name }} zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | mysql --default-character-set=utf8mb4 -u zabbix -p{{ zabbix_db_password }} zabbix
+
+    - name: Configurar senha do banco de dados no Zabbix Server
+      command: docker exec {{ container_name }} sed -i "s/^DBPassword=.*/DBPassword={{ zabbix_db_password }}/" /etc/zabbix/zabbix_server.conf
+
+    - name: Configurar host do banco de dados no Zabbix Server
+      command: docker exec {{ container_name }} sed -i "s/^DBHost=.*/DBHost=localhost/" /etc/zabbix/zabbix_server.conf
+
+    - name: Iniciar serviços do Zabbix Server e Agent
+      command: docker exec {{ container_name }} systemctl start zabbix-server && systemctl start zabbix-agent
+  when: zabbix_container_info is failed or not zabbix_container_info.exists

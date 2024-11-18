@@ -1,0 +1,3 @@
+directory: "dados.dmp"
+dumpFile: "dados.dmp"
+logFile: "expdp.log"

@@ -1,0 +1,6 @@
+- name: Transferência e Importação no Destino
+  hosts: destino
+  tasks:
+    - name: Importar dados no MySQL no host destino
+      command: mysql -u <USUARIO> -p<SENHA> <BANCO> < /tmp/dados.sql
+      register: import_result

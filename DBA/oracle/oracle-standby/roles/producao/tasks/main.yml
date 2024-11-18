@@ -1,0 +1,27 @@
+- name: Migração de backup incremental Oracle
+  hosts: producao
+  tasks:
+    - name: Realizar backup incremental no banco de produção
+      shell: |
+        rman target / <<EOF
+        RUN {
+          BACKUP INCREMENTAL LEVEL 1 CUMULATIVE DATABASE FORMAT '/tmp/backup_incr_%U.bkp' TAG 'INCREMENTAL_BACKUP';
+          CROSSCHECK BACKUP;
+          DELETE OBSOLETE;
+        }
+        EXIT;
+        EOF
+      register: backup_result
+      ignore_errors: yes  # continua mesmo se houver erros no backup
+
+    - name: Verificar se o backup foi realizado com sucesso
+      fail:
+        msg: "O backup incremental falhou."
+      when: backup_result is failed
+
+    - name: Transferir backup incremental para o host standby
+      copy:
+        src: "/tmp/backup_incr_*.bkp"
+        dest: "/tmp/"
+      delegate_to: oracle_standby
+

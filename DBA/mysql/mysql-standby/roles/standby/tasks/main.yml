@@ -1,0 +1,30 @@
+
+- name: Configuração do servidor standby para replicação
+  hosts: standby
+  become: yes
+  tasks:
+    - name: Configurar o ID do servidor standby
+      lineinfile:
+        path: /etc/mysql/my.cnf
+        regexp: '^server-id'
+        line: 'server-id = 2'
+        state: present
+
+    - name: Reiniciar MySQL no servidor standby
+      service:
+        name: mysql
+        state: restarted
+
+    - name: Restaurar backup no servidor standby
+      command: "mysql -u root -p'SUA_SENHA' < /tmp/backup.sql"
+
+    - name: Configurar replicação no servidor standby
+      mysql_replication:
+        login_user: "root"
+        login_password: "SUA_SENHA"
+        master_host: "IP_DO_SERVIDOR_PRINCIPAL"
+        master_user: "replicador"
+        master_password: "senha_replicacao"
+        master_log_file: "mysql-bin.000001"
+        master_log_pos: 4
+        state: present

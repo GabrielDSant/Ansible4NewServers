@@ -1,0 +1,22 @@
+- name: Transferência e Importação no Destino
+  hosts: destino
+  tasks:
+    - name: Verificar tabelas corrompidas no MySQL
+      shell: |
+        mysqlcheck -u <USUARIO> -p<SENHA> <BANCO> --check --extended > /tmp/mysql_check.log
+      register: check_result
+
+    - name: Checar log para erros de corrupção
+      command: grep -i 'corrupt' /tmp/mysql_check.log
+      register: corrupt_check
+      failed_when: corrupt_check.rc == 0
+      ignore_errors: yes
+
+    - name: Enviar alerta de tabelas corrompidas (se houver)
+      mail:
+        to: "seu_email@example.com"
+        subject: "Alerta: Tabelas corrompidas após migração"
+        body: |
+          Algumas tabelas estão corrompidas após a migração:
+          {{ corrupt_check.stdout }}
+      when: corrupt_check.rc == 0

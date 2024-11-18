@@ -1,0 +1,40 @@
+- name: Ler conteúdo do arquivo de log
+  slurp:
+    src: "{{ log_file_path }}"
+  register: log_content
+
+- name: Decodificar o conteúdo do log
+  set_fact:
+    log_decoded: "{{ log_content['content'] | b64decode }}"
+
+- name: Criar mensagem de email
+  set_fact:
+    email_body: |
+      Relatório de Transferência de Dados
+
+      Informações do Banco de Origem:
+      Nome: {{ banco_origem.nome }}
+      Tablespaces: {{ banco_origem.tablespaces }}
+      Objetos Transferidos: {{ banco_origem.objetos_transferidos }}
+      Armazenamento Usado: {{ banco_origem.armazenamento_usado }}
+
+      Informações do Banco de Destino:
+      Nome: {{ banco_destino.nome }}
+      Tablespaces: {{ banco_destino.tablespaces }}
+      Objetos Transferidos: {{ banco_destino.objetos_transferidos }}
+      Armazenamento Usado: {{ banco_destino.armazenamento_usado }}
+
+      Conteúdo do Log:
+      {{ log_decoded }}
+
+- name: Enviar email com o conteúdo do log
+  mail:
+    host: "{{ smtp_host }}"
+    port: "{{ smtp_port }}"
+    username: "{{ smtp_usuario }}"
+    password: "{{ smtp_senha }}"
+    to: "{{ email_destinatario }}"
+    from: "{{ email_remetente }}"
+    subject: "Relatório de Transferência de Dados"
+    body: "{{ email_body }}"
+    secure: starttls

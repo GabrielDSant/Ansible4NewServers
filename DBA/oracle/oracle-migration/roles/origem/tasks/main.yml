@@ -1,0 +1,20 @@
+- name: Migração de dados Oracle
+  hosts: origem
+  tasks:
+    - name: Exportar dados do Oracle no host origem
+      command: expdp {{usuario}}/{{senha}}@{{database}} directory={{directory}} dumpfile={{dumpFile}} logfile={{logFile}}
+      register: export_result
+      failed_when: "'ORA-' in export_result.stderr"  # Checa se houve erro no log de exportação
+
+    - name: Verificar se o dump foi gerado com sucesso
+      stat:
+        path: "{{directory}}/{{dumpFile}}"
+      register: dump_file
+      failed_when: not dump_file.stat.exists  # Falha se o arquivo de dump não existir
+
+    - name: Transferir dump para o controlador
+      copy:
+        src: "{{directory}}/{{dumpFile}}"
+        dest: "{{directory}}/{{dumpFile}}"
+      delegate_to: destino
+

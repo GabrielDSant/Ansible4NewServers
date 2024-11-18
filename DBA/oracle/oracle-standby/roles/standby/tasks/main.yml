@@ -1,0 +1,20 @@
+- name: Aplicar backup incremental no banco de dados standby
+  hosts: standby
+  tasks:
+    - name: Restaurar backup incremental no banco de standby
+      shell: |
+        rman target / <<EOF
+        RUN {
+          CATALOG START WITH '/tmp/backup_incr_*.bkp';
+          RESTORE DATABASE;
+          RECOVER DATABASE;
+        }
+        EXIT;
+        EOF
+      register: restore_result
+      ignore_errors: yes
+
+    - name: Verificar se a restauração foi realizada com sucesso
+      fail:
+        msg: "A restauração do backup no standby falhou."
+      when: restore_result is failed

@@ -1,0 +1,21 @@
+# Informações do banco de dados
+banco_origem:
+  nome: "db_origem"
+  tablespaces: 5
+  objetos_transferidos: 100
+  armazenamento_usado: "500MB"
+
+banco_destino:
+  nome: "db_destino"
+  tablespaces: 4
+  objetos_transferidos: 100
+  armazenamento_usado: "480MB"
+
+email_destinatario: "destinatario@example.com"
+email_remetente: "remetente@example.com"
+smtp_host: "smtp.example.com"
+smtp_port: 587
+smtp_usuario: "usuario"
+smtp_senha: "senha"
+
+log_file_path: "/caminho/para/log_file.txt"  # Caminho do arquivo de log

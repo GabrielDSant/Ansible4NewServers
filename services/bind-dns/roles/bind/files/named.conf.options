@@ -1,0 +1,21 @@
+options {
+    directory "/var/cache/bind";
+
+    // Configura o encaminhamento de consultas para servidores DNS específicos
+    forwarders {
+        8.8.8.8;
+        8.8.4.4;
+    };
+
+    // Permitir apenas consultas de certos IPs (restrição de segurança)
+    allow-query { any; };
+
+    // Permitir recursion apenas para redes internas
+    allow-recursion { 192.168.0.0/24; };
+
+    // Habilitar DNSSEC (opcional)
+    dnssec-validation auto;
+
+    // Definir o diretório pid
+    pid-file "/var/run/named/named.pid";
+};

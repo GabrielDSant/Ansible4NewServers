@@ -1,0 +1,20 @@
+# roles/runner/tasks/main.yml
+
+- name: Verificar se o container GitLab Runner já existe
+  docker_container_info:
+    name: "{{ runner_container_name }}"
+  register: runner_container_info
+  ignore_errors: true
+
+- name: Configurar e criar o container GitLab Runner
+  docker_container:
+    name: "{{ runner_container_name }}"
+    image: "{{ runner_image_name }}"
+    state: started
+    detach: true
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - name: "{{ docker_network_name }}"
+    privileged: true
+  when: runner_container_info is failed or not runner_container_info.exists

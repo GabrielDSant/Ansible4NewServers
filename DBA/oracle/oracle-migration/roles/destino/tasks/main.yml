@@ -1,0 +1,12 @@
+- name: Transferir e importar dados no host destino
+  hosts: destino
+  tasks:
+    - name: Importar dados no Oracle no host destino
+      command: impdp {{usuario}}/{{senha}}@{{database}} directory={{directory}} dumpfile={{dumpFile}} logfile={{logFile}}
+      register: import_result
+      failed_when: "'ORA-' in import_result.stderr"  # Checa se houve erro no log de importação
+
+    - name: Verificar se a importação foi concluída com sucesso
+      shell: "grep 'successfully completed' {{directory}}/{{logFile}}"
+      register: import_success_check
+      failed_when: import_success_check.rc != 0  # Falha se a frase 'successfully completed' não estiver no log
