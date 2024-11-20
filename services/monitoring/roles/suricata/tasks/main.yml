@@ -1,0 +1,15 @@
+- name: Instalar IDS (Suricata)
+  ansible.builtin.package:
+    name: suricata
+    state: present
+
+- name: Configurar Suricata
+  ansible.builtin.copy:
+    src: suricata.yaml
+    dest: /etc/suricata/suricata.yaml
+
+- name: Iniciar e habilitar o Suricata
+  ansible.builtin.service:
+    name: suricata
+    state: started
+    enabled: true

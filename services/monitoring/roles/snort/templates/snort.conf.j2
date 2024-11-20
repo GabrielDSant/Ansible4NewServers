@@ -1,0 +1,5 @@
+var HOME_NET {{ snort_home_net }}
+var EXTERNAL_NET any
+var RULE_PATH {{ snort_rules_path }}
+output unified2: filename snort.log, limit 128
+include $RULE_PATH/local.rules

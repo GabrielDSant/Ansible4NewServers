@@ -1,0 +1,6 @@
+output.elasticsearch:
+  hosts: ["{{ elasticsearch_host }}:9200"]
+filebeat.inputs:
+  - type: log
+    paths:
+      - /var/log/*.log

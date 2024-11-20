@@ -1,0 +1,17 @@
+- name: Verificar se o diretório de origem existe
+  ansible.builtin.stat:
+    path: "{{ backup_source_dir }}"
+  register: source_dir_stat
+
+- name: Criar diretório no servidor de destino
+  ansible.builtin.shell:
+    cmd: "ssh {{ backup_user }}@{{ backup_dest_host }} 'mkdir -p {{ backup_dest_dir }}'"
+  when: source_dir_stat.stat.exists
+
+- name: Fazer backup dos arquivos usando rsync
+  ansible.builtin.command:
+    cmd: >
+      rsync -avz --delete
+      {{ backup_source_dir }}/
+      {{ backup_user }}@{{ backup_dest_host }}:{{ backup_dest_dir }}
+  when: source_dir_stat.stat.exists

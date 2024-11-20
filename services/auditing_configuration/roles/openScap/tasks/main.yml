@@ -1,0 +1,35 @@
+---
+- name: Instalar o OpenSCAP e pacotes de segurança
+  ansible.builtin.package:
+    name: scap-security-guide
+    state: present
+
+- name: Criar diretório para resultados do OpenSCAP
+  ansible.builtin.file:
+    path: "{{ scap_results_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copiar o perfil SCAP personalizado
+  ansible.builtin.template:
+    src: oscap_profile.j2
+    dest: "/usr/share/xml/scap/custom-profile.xml"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Executar auditoria com OpenSCAP
+  ansible.builtin.command:
+    cmd: >
+      oscap xccdf eval
+      --profile {{ profile }}
+      --results {{ scap_results_dir }}/results.xml
+      --report {{ scap_results_dir }}/report.html
+      {{ scap_content }}
+  register: oscap_output
+
+- name: Exibir resumo da auditoria
+  ansible.builtin.debug:
+    msg: "{{ oscap_output.stdout }}"

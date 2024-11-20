@@ -1,0 +1,20 @@
+- name: Instalar o agente de logs (Filebeat)
+  ansible.builtin.package:
+    name: filebeat
+    state: present
+
+- name: Configurar o Filebeat
+  ansible.builtin.template:
+    src: filebeat.yml.j2
+    dest: /etc/filebeat/filebeat.yml
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reiniciar Filebeat
+
+- name: Habilitar e iniciar o serviço
+  ansible.builtin.service:
+    name: filebeat
+    state: started
+    enabled: true

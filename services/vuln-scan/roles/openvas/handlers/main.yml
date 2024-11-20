@@ -1,0 +1,4 @@
+- name: Reiniciar OpenVAS
+  ansible.builtin.service:
+    name: openvas-scanner
+    state: restarted

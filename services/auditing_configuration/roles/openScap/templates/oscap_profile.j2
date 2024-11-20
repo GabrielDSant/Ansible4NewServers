@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<profile id="custom-profile" xmlns="http://checklists.nist.gov/xccdf/1.1">
+  <title>Perfil de Segurança Personalizado</title>
+  <description>
+    Este é um perfil personalizado para atender aos requisitos de segurança da organização.
+  </description>
+  <selection>
+    <!-- Configuração de senha -->
+    <select idref="xccdf_org.ssgproject.content_rule_accounts_password_pam_minlen" selected="true"/>
+    <select idref="xccdf_org.ssgproject.content_rule_accounts_password_pam_ocredit" selected="true"/>
+    <select idref="xccdf_org.ssgproject.content_rule_accounts_password_pam_ucredit" selected="true"/>
+    
+    <!-- Configuração de auditoria -->
+    <select idref="xccdf_org.ssgproject.content_rule_auditd_data_retention_space_left_action" selected="true"/>
+    <select idref="xccdf_org.ssgproject.content_rule_audit_rules_privileged_commands" selected="true"/>
+    
+    <!-- Configuração de SSH -->
+    <select idref="xccdf_org.ssgproject.content_rule_sshd_disable_root_login" selected="true"/>
+    <select idref="xccdf_org.ssgproject.content_rule_sshd_use_approved_ciphers" selected="true"/>
+    
+    <!-- Configuração do SELinux -->
+    <select idref="xccdf_org.ssgproject.content_rule_selinux_state" selected="true"/>
+    <select idref="xccdf_org.ssgproject.content_rule_selinux_policytype" selected="true"/>
+  </selection>
+</profile>

@@ -1,0 +1,5 @@
+snort_version: "2.9.20"  # Altere conforme necessário
+snort_interface: "eth0"
+snort_home_net: "[192.168.1.0/24]"
+snort_rules_path: "/etc/snort/rules"
+snort_conf_path: "/etc/snort/snort.conf"

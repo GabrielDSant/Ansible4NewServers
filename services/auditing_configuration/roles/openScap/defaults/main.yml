@@ -1,0 +1,3 @@
+profile: "custom-profile"  # Nome do perfil SCAP definido no template
+scap_content: "/usr/share/xml/scap/ssg/content/ssg-rhel7-ds.xml"
+scap_results_dir: "/var/log/oscap"

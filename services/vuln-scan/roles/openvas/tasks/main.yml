@@ -1,0 +1,11 @@
+- name: Instalar OpenVAS
+  ansible.builtin.package:
+    name: openvas
+    state: present
+
+- name: Configurar e iniciar OpenVAS
+  ansible.builtin.command:
+    cmd: "openvas-setup"
+    creates: /var/lib/openvas/CA
+  notify:
+    - Reiniciar OpenVAS

@@ -1,0 +1,68 @@
+---
+- name: Atualizar pacotes do sistema
+  ansible.builtin.apt:
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+
+- name: Instalar dependências do Snort
+  ansible.builtin.package:
+    name:
+      - build-essential
+      - libpcap-dev
+      - libpcre3-dev
+      - libdumbnet-dev
+      - bison
+      - flex
+      - zlib1g-dev
+    state: present
+
+- name: Baixar e instalar o Snort
+  ansible.builtin.shell:
+    cmd: |
+      wget https://www.snort.org/downloads/snort/snort-{{ snort_version }}.tar.gz
+      tar -xvzf snort-{{ snort_version }}.tar.gz
+      cd snort-{{ snort_version }}
+      ./configure && make && make install
+  args:
+    chdir: /tmp
+  creates: /usr/local/bin/snort
+
+- name: Criar diretórios do Snort
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - /etc/snort
+    - /var/log/snort
+    - "{{ snort_rules_path }}"
+
+- name: Copiar arquivo de configuração do Snort
+  ansible.builtin.template:
+    src: snort.conf.j2
+    dest: "{{ snort_conf_path }}"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Copiar regras personalizadas
+  ansible.builtin.copy:
+    src: custom.rules
+    dest: "{{ snort_rules_path }}/local.rules"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Testar a configuração do Snort
+  ansible.builtin.command:
+    cmd: snort -T -c {{ snort_conf_path }}
+  register: snort_test
+  failed_when: "'Snort successfully validated' not in snort_test.stdout"
+
+- name: Iniciar o Snort
+  ansible.builtin.systemd:
+    name: snort
+    state: started
+    enabled: true
